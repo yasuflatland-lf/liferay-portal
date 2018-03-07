@@ -41,6 +41,7 @@ import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.model.Group;
@@ -113,9 +114,14 @@ public class DLFileEntryIndexer
 		setDefaultSelectedFieldNames(
 			Field.ASSET_TAG_NAMES, Field.COMPANY_ID, Field.CONTENT,
 			Field.ENTRY_CLASS_NAME, Field.ENTRY_CLASS_PK, Field.GROUP_ID,
-			Field.MODIFIED_DATE, Field.SCOPE_GROUP_ID, Field.TITLE, Field.UID);
-		setFilterSearch(true);
-		setPermissionAware(true);
+            Field.MODIFIED_DATE, Field.SCOPE_GROUP_ID, Field.UID);
+
+        setDefaultSelectedLocalizedFieldNames(
+            Field.DESCRIPTION, Field.TITLE, Field.USER_NAME);
+
+        setFilterSearch(true);
+        setPermissionAware(true);
+        setSelectAllLocales(true);
 	}
 
 	@Override
@@ -295,13 +301,9 @@ public class DLFileEntryIndexer
 			SearchContext searchContext)
 		throws Exception {
 
-		String keywords = searchContext.getKeywords();
-
-		if (Validator.isNull(keywords)) {
-			addSearchTerm(searchQuery, searchContext, Field.DESCRIPTION, false);
-			addSearchTerm(searchQuery, searchContext, Field.TITLE, false);
-			addSearchTerm(searchQuery, searchContext, Field.USER_NAME, false);
-		}
+		addSearchLocalizedTerm(searchQuery, searchContext, Field.DESCRIPTION, false);
+		addSearchLocalizedTerm(searchQuery, searchContext, Field.TITLE, false);
+		addSearchLocalizedTerm(searchQuery, searchContext, Field.USER_NAME, false);
 
 		addSearchTerm(searchQuery, searchContext, "ddmContent", false);
 		addSearchTerm(searchQuery, searchContext, "extension", false);
@@ -441,21 +443,43 @@ public class DLFileEntryIndexer
 				}
 			}
 
-			document.addKeyword(
+			String[] languageIds = null;
+
+			if (isSelectAllLocales()) {
+                languageIds =
+					LocaleUtil.toLanguageIds(
+						LanguageUtil.getSupportedLocales());
+			} else {
+				languageIds = dlFileEntry.getDLFileEntryType().getAvailableLanguageIds();
+			}
+
+            for (String languageId : languageIds) {
+                document.addText(
+                    LocalizationUtil.getLocalizedName(Field.DESCRIPTION, languageId),
+                    dlFileEntry.getDescription());
+
+                String title = dlFileEntry.getTitle();
+
+                if (dlFileEntry.isInTrash()) {
+                    title = TrashUtil.getOriginalTitle(title);
+                }
+
+                document.addText(
+                    LocalizationUtil.getLocalizedName(Field.TITLE, languageId),
+                    title);
+
+                document.addText(
+                    LocalizationUtil.getLocalizedName(Field.USER_NAME, languageId),
+                    dlFileEntry.getUserName());
+
+            }
+
+            document.addKeyword(
 				Field.CLASS_TYPE_ID, dlFileEntry.getFileEntryTypeId());
-			document.addText(Field.DESCRIPTION, dlFileEntry.getDescription());
 			document.addKeyword(Field.FOLDER_ID, dlFileEntry.getFolderId());
 			document.addKeyword(Field.HIDDEN, dlFileEntry.isInHiddenFolder());
 			document.addText(
 				Field.PROPERTIES, dlFileEntry.getLuceneProperties());
-
-			String title = dlFileEntry.getTitle();
-
-			if (dlFileEntry.isInTrash()) {
-				title = TrashUtil.getOriginalTitle(title);
-			}
-
-			document.addText(Field.TITLE, title);
 
 			document.addKeyword(
 				Field.TREE_PATH,

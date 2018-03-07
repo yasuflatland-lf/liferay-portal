@@ -166,11 +166,71 @@ public class DLFileEntryIndexerLocalizedContentTest {
 		}
 	}
 
-	protected FileEntry addFileEntry(String fileName) throws Exception {
-		return addFileEntry(fileName, _group.getGroupId());
+	@Test
+	public void testJapaneseTitle() throws Exception {
+
+		GroupTestUtil.updateDisplaySettings(
+			_group.getGroupId(), null, LocaleUtil.JAPAN);
+
+		String title = "平家物語";
+		String description = "諸行無常";
+
+		addFileEntry("title_desc_test1.txt", _group.getGroupId(), title, description );
+
+		String word1 = "平家";
+		String word2 = "諸行";
+
+		Stream<String> searchTerms = Stream.of(word1, word2);
+
+		searchTerms.forEach(
+			searchTerm -> {
+				Document document = _search(searchTerm, LocaleUtil.JAPAN);
+
+				List<String> fields = _getFieldValues("description", document);
+
+				Assert.assertTrue(fields.contains("description_ja_JP"));
+			});
 	}
 
-	protected FileEntry addFileEntry(String fileName, long groupId)
+	@Test
+	public void testJapaneseFileCount() throws Exception {
+		GroupTestUtil.updateDisplaySettings(
+			_group.getGroupId(), null, LocaleUtil.JAPAN);
+
+		addFileEntry("title_desc_test1.txt", _group.getGroupId(), "平家物語", "諸行無常" );
+		addFileEntry("title_desc_test2.txt", _group.getGroupId(), "方丈記", "鴨長明" );
+
+		String searchTerm = "無常";
+
+		try {
+			SearchContext searchContext = _getSearchContext(
+				searchTerm, LocaleUtil.JAPAN, _group.getGroupId());
+
+			Hits hits = _indexer.search(searchContext);
+
+			List<Document> documents = hits.toList();
+
+			Assert.assertEquals(1,documents.size());
+
+		}
+		catch (RuntimeException re) {
+			throw re;
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected FileEntry addFileEntry(String fileName) throws Exception {
+		return addFileEntry(fileName, _group.getGroupId(), fileName, StringPool.BLANK);
+	}
+
+	protected FileEntry addFileEntry(String fileName, long groupId) throws Exception {
+		return addFileEntry(fileName, groupId, fileName, StringPool.BLANK);
+	}
+
+	protected FileEntry addFileEntry(
+		String fileName, long groupId, String title, String description)
 		throws Exception {
 
 		ServiceContext serviceContext =
@@ -190,7 +250,7 @@ public class DLFileEntryIndexerLocalizedContentTest {
 			fileEntry = DLAppLocalServiceUtil.addFileEntry(
 				serviceContext.getUserId(), serviceContext.getScopeGroupId(),
 				DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, fileName, mimeType,
-				fileName, StringPool.BLANK, StringPool.BLANK, file,
+				title, description, StringPool.BLANK, file,
 				serviceContext);
 		}
 		finally {

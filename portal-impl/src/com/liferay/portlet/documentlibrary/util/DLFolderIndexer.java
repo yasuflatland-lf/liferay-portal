@@ -23,9 +23,11 @@ import com.liferay.portal.kernel.dao.orm.IndexableActionableDynamicQuery;
 import com.liferay.portal.kernel.dao.orm.Property;
 import com.liferay.portal.kernel.dao.orm.PropertyFactoryUtil;
 import com.liferay.portal.kernel.exception.PortalException;
+import com.liferay.portal.kernel.language.LanguageUtil;
 import com.liferay.portal.kernel.log.Log;
 import com.liferay.portal.kernel.log.LogFactoryUtil;
 import com.liferay.portal.kernel.search.BaseIndexer;
+import com.liferay.portal.kernel.search.BooleanQuery;
 import com.liferay.portal.kernel.search.Document;
 import com.liferay.portal.kernel.search.Field;
 import com.liferay.portal.kernel.search.FolderIndexer;
@@ -38,8 +40,11 @@ import com.liferay.portal.kernel.security.permission.PermissionChecker;
 import com.liferay.portal.kernel.security.permission.resource.ModelResourcePermission;
 import com.liferay.portal.kernel.spring.osgi.OSGiBeanProperties;
 import com.liferay.portal.kernel.util.GetterUtil;
+import com.liferay.portal.kernel.util.LocaleUtil;
+import com.liferay.portal.kernel.util.LocalizationUtil;
 import com.liferay.portal.kernel.util.ServiceProxyFactory;
 import com.liferay.portal.kernel.util.StringUtil;
+import com.liferay.portal.kernel.util.Validator;
 import com.liferay.trash.kernel.util.TrashUtil;
 
 import java.util.Locale;
@@ -58,10 +63,15 @@ public class DLFolderIndexer
 
 	public DLFolderIndexer() {
 		setDefaultSelectedFieldNames(
-			Field.COMPANY_ID, Field.DESCRIPTION, Field.ENTRY_CLASS_NAME,
-			Field.ENTRY_CLASS_PK, Field.TITLE, Field.UID);
+			Field.COMPANY_ID, Field.ENTRY_CLASS_NAME,
+			Field.ENTRY_CLASS_PK, Field.UID);
+
+		setDefaultSelectedLocalizedFieldNames(
+			Field.DESCRIPTION, Field.TITLE);
+
 		setFilterSearch(true);
 		setPermissionAware(true);
+		setSelectAllLocales(true);
 	}
 
 	@Override
@@ -95,6 +105,17 @@ public class DLFolderIndexer
 	}
 
 	@Override
+	public void postProcessSearchQuery(
+		BooleanQuery searchQuery, BooleanFilter fullQueryBooleanFilter,
+		SearchContext searchContext)
+		throws Exception {
+
+		addSearchLocalizedTerm(searchQuery, searchContext, Field.DESCRIPTION, false);
+		addSearchLocalizedTerm(searchQuery, searchContext, Field.TITLE, false);
+		addSearchLocalizedTerm(searchQuery, searchContext, Field.USER_NAME, false);
+	}
+
+	@Override
 	protected void doDelete(DLFolder dlFolder) throws Exception {
 		deleteDocument(dlFolder.getCompanyId(), dlFolder.getFolderId());
 	}
@@ -107,18 +128,29 @@ public class DLFolderIndexer
 
 		Document document = getBaseModelDocument(CLASS_NAME, dlFolder);
 
-		document.addText(Field.DESCRIPTION, dlFolder.getDescription());
 		document.addKeyword(Field.FOLDER_ID, dlFolder.getParentFolderId());
 		document.addKeyword(
 			Field.HIDDEN, dlFolder.isHidden() || dlFolder.isInHiddenFolder());
 
-		String title = dlFolder.getName();
+		String[] languageIds = LocaleUtil.toLanguageIds(
+					LanguageUtil.getSupportedLocales());
 
-		if (dlFolder.isInTrash()) {
-			title = TrashUtil.getOriginalTitle(title);
+		for (String languageId : languageIds) {
+			document.addText(
+				LocalizationUtil.getLocalizedName(Field.DESCRIPTION, languageId),
+				dlFolder.getDescription());
+
+			String title = dlFolder.getName();
+
+			if (dlFolder.isInTrash()) {
+				title = TrashUtil.getOriginalTitle(title);
+			}
+
+			document.addText(
+				LocalizationUtil.getLocalizedName(Field.TITLE, languageId),
+				title);
+
 		}
-
-		document.addText(Field.TITLE, title);
 
 		document.addKeyword(Field.TREE_PATH, dlFolder.getTreePath());
 		document.addKeyword(

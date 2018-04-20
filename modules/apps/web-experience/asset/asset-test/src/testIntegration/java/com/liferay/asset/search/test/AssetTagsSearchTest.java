@@ -84,6 +84,40 @@ public class AssetTagsSearchTest {
 	}
 
 	@Test
+	public void testExactMatchJapaneseSearch() throws Exception {
+		AssetTagLocalServiceUtil.addTag(
+			TestPropsValues.getUserId(), _group.getGroupId(), "東京都",
+			_serviceContext);
+
+		AssetTagLocalServiceUtil.addTag(
+			TestPropsValues.getUserId(), _group.getGroupId(), "京都",
+			_serviceContext);
+
+		BaseModelSearchResult<AssetTag> searchResult =
+			AssetTagLocalServiceUtil.searchTags(
+				new long[] {_group.getGroupId()}, "\"東京都\"", 0, 20, null);
+
+		Assert.assertEquals(1, searchResult.getLength());
+	}
+	
+	@Test
+	public void testExactMatchJapaneseNameSearch() throws Exception {
+		AssetTagLocalServiceUtil.addTag(
+			TestPropsValues.getUserId(), _group.getGroupId(), "下坂",
+			_serviceContext);
+
+		AssetTagLocalServiceUtil.addTag(
+			TestPropsValues.getUserId(), _group.getGroupId(), "坂下",
+			_serviceContext);
+
+		BaseModelSearchResult<AssetTag> searchResult =
+			AssetTagLocalServiceUtil.searchTags(
+				new long[] {_group.getGroupId()}, "\"下坂\"", 0, 20, null);
+
+		Assert.assertEquals(1, searchResult.getLength());
+	}	
+	
+	@Test
 	public void testNoMatchSearch() throws Exception {
 		AssetTagLocalServiceUtil.addTag(
 			TestPropsValues.getUserId(), _group.getGroupId(), "tag1",
@@ -127,6 +161,33 @@ public class AssetTagsSearchTest {
 		Assert.assertTrue(assetTagsNames.containsAll(searchAssetTags));
 	}
 
+	@Test
+	public void testPartialMatchJapaneseSearch() throws Exception {
+		List<String> searchAssetTags = Arrays.asList("東京都", "京都");
+
+		for (String assetTag : searchAssetTags) {
+			AssetTagLocalServiceUtil.addTag(
+				TestPropsValues.getUserId(), _group.getGroupId(), assetTag,
+				_serviceContext);
+		}
+
+		BaseModelSearchResult<AssetTag> searchResult =
+			AssetTagLocalServiceUtil.searchTags(
+				new long[] {_group.getGroupId()}, "京都", 0, 20, null);
+
+		List<AssetTag> assetTags = searchResult.getBaseModels();
+
+		Stream<AssetTag> assetTagsStream = assetTags.stream();
+
+		Stream<String> assetTagsNamesStream = assetTagsStream.map(
+			assetTag -> assetTag.getName());
+
+		List<String> assetTagsNames = assetTagsNamesStream.collect(
+			Collectors.toList());
+
+		Assert.assertTrue(assetTagsNames.containsAll(searchAssetTags));
+	}	
+	
 	@DeleteAfterTestRun
 	private Group _group;
 

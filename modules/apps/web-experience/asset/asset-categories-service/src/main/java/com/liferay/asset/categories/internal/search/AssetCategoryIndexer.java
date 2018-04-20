@@ -63,6 +63,10 @@ public class AssetCategoryIndexer extends BaseIndexer<AssetCategory> {
 		setDefaultSelectedFieldNames(
 			Field.ASSET_CATEGORY_ID, Field.COMPANY_ID, Field.GROUP_ID,
 			Field.UID);
+
+		setDefaultSelectedLocalizedFieldNames(
+			Field.TITLE, Field.ASSET_CATEGORY_TITLE);
+
 		setFilterSearch(true);
 		setPermissionAware(true);
 	}
@@ -161,13 +165,6 @@ public class AssetCategoryIndexer extends BaseIndexer<AssetCategory> {
 		document.addKeyword(
 			Field.ASSET_CATEGORY_ID, assetCategory.getCategoryId());
 
-		List<AssetCategory> categories = new ArrayList<>(1);
-
-		categories.add(assetCategory);
-
-		addSearchAssetCategoryTitles(
-			document, Field.ASSET_CATEGORY_TITLE, categories);
-
 		document.addKeyword(
 			Field.ASSET_PARENT_CATEGORY_ID,
 			assetCategory.getParentCategoryId());
@@ -181,10 +178,18 @@ public class AssetCategoryIndexer extends BaseIndexer<AssetCategory> {
 			document, Field.DESCRIPTION, siteDefaultLocale,
 			assetCategory.getDescriptionMap());
 
-		document.addText(Field.NAME, assetCategory.getName());
+		addLocalizedField(
+			document, Field.ASSET_CATEGORY_TITLE, siteDefaultLocale,
+			assetCategory.getTitleMap());
+
+		addLocalizedField(
+				document, Field.NAME, siteDefaultLocale,
+				assetCategory.getTitleMap());
+
 		addLocalizedField(
 			document, Field.TITLE, siteDefaultLocale,
 			assetCategory.getTitleMap());
+
 		document.addKeyword(
 			"leftCategoryId", assetCategory.getLeftCategoryId());
 

@@ -59,6 +59,9 @@ public class AssetVocabularyIndexer extends BaseIndexer<AssetVocabulary> {
 		setDefaultSelectedFieldNames(
 			Field.ASSET_VOCABULARY_ID, Field.COMPANY_ID, Field.GROUP_ID,
 			Field.UID);
+
+		setDefaultSelectedLocalizedFieldNames(Field.TITLE);
+
 		setFilterSearch(true);
 		setPermissionAware(true);
 	}
@@ -93,7 +96,7 @@ public class AssetVocabularyIndexer extends BaseIndexer<AssetVocabulary> {
 			BooleanQuery localizedQuery = new BooleanQueryImpl();
 
 			addSearchLocalizedTerm(
-				localizedQuery, searchContext, Field.TITLE, true);
+				localizedQuery, searchContext, Field.TITLE, false);
 
 			searchQuery.add(localizedQuery, BooleanClauseOccur.SHOULD);
 		}
@@ -125,7 +128,10 @@ public class AssetVocabularyIndexer extends BaseIndexer<AssetVocabulary> {
 			document, Field.DESCRIPTION, siteDefaultLocale,
 			assetVocabulary.getDescriptionMap());
 
-		document.addText(Field.NAME, assetVocabulary.getName());
+		addLocalizedField(
+			document, Field.NAME, siteDefaultLocale,
+			assetVocabulary.getTitleMap());
+
 		addLocalizedField(
 			document, Field.TITLE, siteDefaultLocale,
 			assetVocabulary.getTitleMap());

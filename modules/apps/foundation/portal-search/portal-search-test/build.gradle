@@ -1,7 +1,13 @@
 sourceCompatibility = "1.8"
 targetCompatibility = "1.8"
 
+copyLibs {
+	enabled = true
+}
+
 dependencies {
+	compileOnly project(":apps:web-experience:journal:journal-test")
+
 	testCompile group: "com.liferay.portal", name: "com.liferay.portal.kernel", version: "default"
 	testCompile project(":apps:forms-and-workflow:calendar:calendar-api")
 	testCompile project(":apps:forms-and-workflow:calendar:calendar-service")

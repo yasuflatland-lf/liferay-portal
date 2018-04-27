@@ -3,4 +3,6 @@ Bundle-SymbolicName: com.liferay.portal.search.test
 Bundle-Version: 1.0.0
 Liferay-Releng-Module-Group-Description:
 Liferay-Releng-Module-Group-Title: Search
--includeresource: test-classes/integration
+-includeresource:\
+	test-classes/integration,\
+	@lib/com.liferay.journal.test.jar!/com/liferay/journal/test/util/JournalTestUtil.class

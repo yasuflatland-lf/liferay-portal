@@ -22,6 +22,7 @@ import com.liferay.portal.kernel.search.Hits;
 import com.liferay.portal.kernel.search.SearchContext;
 import com.liferay.portal.kernel.search.SearchContextFactory;
 import com.liferay.portal.kernel.search.SearchException;
+import com.liferay.portal.kernel.util.Validator;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -46,6 +47,10 @@ public class FolderTitleLookupImpl implements FolderTitleLookup {
 
 		Field field = document.getField(Field.TITLE);
 
+		if(Validator.isNull(field)) {
+			return null;
+		}
+		
 		return field.getValue();
 	}
 

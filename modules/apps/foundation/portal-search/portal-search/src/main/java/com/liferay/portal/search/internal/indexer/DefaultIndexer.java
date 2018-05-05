@@ -339,6 +339,11 @@ public class DefaultIndexer<T extends BaseModel<?>> implements Indexer<T> {
 		return LocaleUtil.getMostRelevantLocale();
 	}
 
+	@Override
+	public String getPrefixedFieldName(String original) {
+		return null;
+	}
+
 	private final IndexerDocumentBuilder _indexerDocumentBuilder;
 	private final IndexerPermissionPostFilter _indexerPermissionPostFilter;
 	private final IndexerPostProcessorsHolder _indexerPostProcessorsHolder;
@@ -347,5 +352,4 @@ public class DefaultIndexer<T extends BaseModel<?>> implements Indexer<T> {
 	private final IndexerSummaryBuilder _indexerSummaryBuilder;
 	private final IndexerWriter<T> _indexerWriter;
 	private final ModelSearchSettings _modelSearchSettings;
-
 }

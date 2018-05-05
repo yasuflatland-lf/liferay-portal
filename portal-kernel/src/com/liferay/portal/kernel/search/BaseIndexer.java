@@ -20,6 +20,7 @@ import com.liferay.asset.kernel.model.AssetEntry;
 import com.liferay.asset.kernel.model.AssetRendererFactory;
 import com.liferay.asset.kernel.service.AssetEntryLocalServiceUtil;
 import com.liferay.expando.kernel.model.ExpandoBridge;
+import com.liferay.petra.string.CharPool;
 import com.liferay.petra.string.StringPool;
 import com.liferay.portal.kernel.exception.NoSuchCountryException;
 import com.liferay.portal.kernel.exception.NoSuchModelException;
@@ -83,6 +84,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 import javax.portlet.PortletRequest;
 import javax.portlet.PortletResponse;
@@ -1929,6 +1932,22 @@ public abstract class BaseIndexer<T> implements Indexer<T> {
 		return entryClassNameIndexerMap;
 	}
 
+    public String getPrefixedFieldName(String original) {
+    	if(Validator.isNull(_genericName)) {
+    		_genericName = "";
+
+			//In test, you may not be able to fetch Generic class properly
+            Type mySuperclass = this.getClass().getGenericSuperclass();
+
+            if(mySuperclass instanceof java.lang.reflect.ParameterizedType) {
+                Type tType = ((ParameterizedType) mySuperclass).getActualTypeArguments()[0];
+                _genericName = StringUtil.extractLast(tType.getTypeName(), CharPool.PERIOD);
+            }
+    	}
+
+    	return _genericName + original;
+    }
+
 	private static final long _DEFAULT_FOLDER_ID = 0L;
 
 	private static final Log _log = LogFactoryUtil.getLog(BaseIndexer.class);
@@ -1953,5 +1972,6 @@ public abstract class BaseIndexer<T> implements Indexer<T> {
 	private String _searchEngineId;
 	private boolean _selectAllLocales;
 	private boolean _stagingAware = true;
+	private String _genericName = null;
 
 }

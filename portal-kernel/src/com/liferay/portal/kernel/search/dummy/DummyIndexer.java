@@ -257,4 +257,8 @@ public class DummyIndexer implements Indexer<Object> {
 		IndexerPostProcessor indexerPostProcessor) {
 	}
 
+	@Override
+	public String getPrefixedFieldName(String original) {
+		return null;
+	}
 }

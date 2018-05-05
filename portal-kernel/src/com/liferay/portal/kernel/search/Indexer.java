@@ -194,5 +194,7 @@ public interface Indexer<T> {
 
 	public void unregisterIndexerPostProcessor(
 		IndexerPostProcessor indexerPostProcessor);
+	
+    public String getPrefixedFieldName(String original);	
 
 }

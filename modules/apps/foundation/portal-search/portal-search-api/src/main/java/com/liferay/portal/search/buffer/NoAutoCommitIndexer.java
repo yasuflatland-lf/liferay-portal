@@ -315,6 +315,11 @@ public class NoAutoCommitIndexer<T> implements Indexer<T> {
 		_indexer.unregisterIndexerPostProcessor(indexerPostProcessor);
 	}
 
+	@Override
+	public String getPrefixedFieldName(String original) {
+		return _indexer.getPrefixedFieldName(original);
+	}
+
 	private final Indexer<T> _indexer;
 
 }

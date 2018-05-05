@@ -4,11 +4,7 @@ import com.liferay.arquillian.extension.junit.bridge.junit.Arquillian;
 import com.liferay.document.library.kernel.model.DLFolder;
 import com.liferay.document.library.kernel.model.DLFolderConstants;
 import com.liferay.document.library.kernel.service.DLAppServiceUtil;
-import com.liferay.document.library.kernel.service.DLFolderLocalServiceUtil;
 import com.liferay.petra.string.StringPool;
-import com.liferay.portal.kernel.log.Log;
-import com.liferay.portal.kernel.log.LogFactoryUtil;
-import com.liferay.portal.kernel.model.BaseModel;
 import com.liferay.portal.kernel.model.Group;
 import com.liferay.portal.kernel.repository.model.Folder;
 import com.liferay.portal.kernel.search.Document;
@@ -22,15 +18,19 @@ import com.liferay.portal.kernel.service.ServiceContext;
 import com.liferay.portal.kernel.test.rule.AggregateTestRule;
 import com.liferay.portal.kernel.test.rule.DeleteAfterTestRun;
 import com.liferay.portal.kernel.test.util.GroupTestUtil;
-import com.liferay.portal.kernel.test.util.RandomTestUtil;
 import com.liferay.portal.kernel.test.util.SearchContextTestUtil;
 import com.liferay.portal.kernel.test.util.ServiceContextTestUtil;
 import com.liferay.portal.kernel.test.util.TestPropsValues;
 import com.liferay.portal.kernel.util.LocaleUtil;
 import com.liferay.portal.service.test.ServiceTestUtil;
 import com.liferay.portal.test.rule.LiferayIntegrationTestRule;
-import com.liferay.portlet.documentlibrary.util.DLFileEntryIndexer;
 import com.liferay.portlet.documentlibrary.util.DLFolderIndexer;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -38,18 +38,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.stream.Stream;
-
 /**
  * @author Yasuyuki Takeo
  */
 @RunWith(Arquillian.class)
 public class DLFolderIndexerLocalizedTest {
+
+	private String _CONTENT;
+	private String _DESCRIPTION;
+	private String _TITLE;
+
 	@ClassRule
 	@Rule
 	public static final AggregateTestRule aggregateTestRule =
@@ -57,6 +55,7 @@ public class DLFolderIndexerLocalizedTest {
 
 	@Before
 	public void setUp() throws Exception {
+
 		_group = GroupTestUtil.addGroup();
 
 		ServiceTestUtil.setUser(TestPropsValues.getUser());
@@ -64,6 +63,10 @@ public class DLFolderIndexerLocalizedTest {
 		CompanyThreadLocal.setCompanyId(TestPropsValues.getCompanyId());
 
 		_indexer = new DLFolderIndexer();
+
+		_TITLE = _indexer.getPrefixedFieldName(Field.TITLE);
+		_CONTENT = _indexer.getPrefixedFieldName(Field.CONTENT);
+		_DESCRIPTION = _indexer.getPrefixedFieldName(Field.DESCRIPTION);
 	}
 
 	@Test
@@ -74,26 +77,25 @@ public class DLFolderIndexerLocalizedTest {
 		String title = "平家物語";
 		String description = "諸行無常";
 
-		DLFolder folder = addForlder(_group.getGroupId(),title,description);
+		DLFolder folder = addForlder(_group.getGroupId(), title, description);
 
 		String word1 = "平家";
 		String word2 = "諸行";
 
 		Document document1 = _search(word1, LocaleUtil.JAPAN);
 
-		List<String> fields1 = _getFieldValues("title", document1);
+		List<String> fields1 = _getFieldValues(_TITLE, document1);
 
-		Assert.assertTrue(fields1.contains("title_ja_JP"));
+		Assert.assertTrue(fields1.contains(_TITLE + "_ja_JP"));
 
 		Document document2 = _search(word2, LocaleUtil.JAPAN);
 
-		List<String> fields2 = _getFieldValues("description", document2);
+		List<String> fields2 = _getFieldValues(_DESCRIPTION, document2);
 
-		Assert.assertTrue(fields2.contains("description_ja_JP"));
+		Assert.assertTrue(fields2.contains(_DESCRIPTION + "_ja_JP"));
 	}
 
-	protected DLFolder addForlder(
-		long groupId, String name, String description)
+	protected DLFolder addForlder(long groupId, String name, String description)
 		throws Exception {
 
 		ServiceContext serviceContext =
@@ -101,14 +103,30 @@ public class DLFolderIndexerLocalizedTest {
 
 		Folder folder = DLAppServiceUtil.addFolder(
 			serviceContext.getScopeGroupId(),
-			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID,
-			name,description, serviceContext);
+			DLFolderConstants.DEFAULT_PARENT_FOLDER_ID, name, description,
+			serviceContext);
 
 		return (DLFolder)folder.getModel();
 	}
 
+	private static List<String> _getFieldValues(
+		String prefix, Document document) {
+
+		List<String> filteredFields = new ArrayList<>();
+
+		Map<String, Field> fields = document.getFields();
+
+		for (String field : fields.keySet()) {
+			if (field.contains(prefix)) {
+				filteredFields.add(field);
+			}
+		}
+
+		return filteredFields;
+	}
+
 	private SearchContext _getSearchContext(
-		String searchTerm, Locale locale, long groupId)
+			String searchTerm, Locale locale, long groupId)
 		throws Exception {
 
 		SearchContext searchContext = SearchContextTestUtil.getSearchContext(
@@ -153,22 +171,6 @@ public class DLFolderIndexerLocalizedTest {
 		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	private static List<String> _getFieldValues(
-		String prefix, Document document) {
-
-		List<String> filteredFields = new ArrayList<>();
-
-		Map<String, Field> fields = document.getFields();
-
-		for (String field : fields.keySet()) {
-			if (field.contains(prefix)) {
-				filteredFields.add(field);
-			}
-		}
-
-		return filteredFields;
 	}
 
 	@DeleteAfterTestRun

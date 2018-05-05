@@ -61,17 +61,24 @@ public class DLFolderIndexer
 
 	public static final String CLASS_NAME = DLFolder.class.getName();
 
+	protected String _TITLE;
+	protected String _DESCRIPTION;
+	protected String _USER_NAME;
+
 	public DLFolderIndexer() {
+		_TITLE = getPrefixedFieldName(Field.TITLE);
+		_DESCRIPTION = getPrefixedFieldName(Field.DESCRIPTION);
+		_USER_NAME = getPrefixedFieldName(Field.USER_NAME);
+
 		setDefaultSelectedFieldNames(
 			Field.COMPANY_ID, Field.ENTRY_CLASS_NAME,
 			Field.ENTRY_CLASS_PK, Field.UID);
 
 		setDefaultSelectedLocalizedFieldNames(
-			Field.DESCRIPTION, Field.TITLE);
+			_DESCRIPTION, _TITLE);
 
 		setFilterSearch(true);
 		setPermissionAware(true);
-		setSelectAllLocales(true);
 	}
 
 	@Override
@@ -110,9 +117,9 @@ public class DLFolderIndexer
 		SearchContext searchContext)
 		throws Exception {
 
-		addSearchLocalizedTerm(searchQuery, searchContext, Field.DESCRIPTION, false);
-		addSearchLocalizedTerm(searchQuery, searchContext, Field.TITLE, false);
-		addSearchLocalizedTerm(searchQuery, searchContext, Field.USER_NAME, false);
+		addSearchLocalizedTerm(searchQuery, searchContext, _DESCRIPTION, false);
+		addSearchLocalizedTerm(searchQuery, searchContext, _TITLE, false);
+		addSearchLocalizedTerm(searchQuery, searchContext, _USER_NAME, false);
 	}
 
 	@Override
@@ -137,7 +144,7 @@ public class DLFolderIndexer
 
 		for (String languageId : languageIds) {
 			document.addText(
-				LocalizationUtil.getLocalizedName(Field.DESCRIPTION, languageId),
+				LocalizationUtil.getLocalizedName(_DESCRIPTION, languageId),
 				dlFolder.getDescription());
 
 			String title = dlFolder.getName();
@@ -147,7 +154,7 @@ public class DLFolderIndexer
 			}
 
 			document.addText(
-				LocalizationUtil.getLocalizedName(Field.TITLE, languageId),
+				LocalizationUtil.getLocalizedName(_TITLE, languageId),
 				title);
 
 		}
@@ -169,8 +176,13 @@ public class DLFolderIndexer
 		Document document, Locale locale, String snippet,
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
+		String languageId = LocaleUtil.toLanguageId(locale);
+
+		String title = LocalizationUtil.getLocalizedName(_TITLE, languageId);
+		String description = LocalizationUtil.getLocalizedName(_DESCRIPTION, languageId);
+
 		Summary summary = createSummary(
-			document, Field.TITLE, Field.DESCRIPTION);
+			document, title, description);
 
 		summary.setMaxContentLength(200);
 

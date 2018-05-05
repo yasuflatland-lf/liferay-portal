@@ -88,7 +88,7 @@ import com.liferay.trash.kernel.util.TrashUtil;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
-
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -109,15 +109,26 @@ public class DLFileEntryIndexer
 	extends BaseIndexer<DLFileEntry> implements RelatedEntryIndexer {
 
 	public static final String CLASS_NAME = DLFileEntry.class.getName();
+    public static final String INDEX_PREFIX = DLFileEntry.class.getSimpleName();
+
+	protected String _TITLE;
+	protected String _CONTENT;
+	protected String _DESCRIPTION;
+	protected String _USER_NAME;
 
 	public DLFileEntryIndexer() {
+		_TITLE = getPrefixedFieldName(Field.TITLE);
+		_CONTENT = getPrefixedFieldName(Field.CONTENT);
+		_DESCRIPTION = getPrefixedFieldName(Field.DESCRIPTION);
+		_USER_NAME = getPrefixedFieldName(Field.USER_NAME);
+
 		setDefaultSelectedFieldNames(
-			Field.ASSET_TAG_NAMES, Field.COMPANY_ID, Field.CONTENT,
+			Field.ASSET_TAG_NAMES, Field.COMPANY_ID,
 			Field.ENTRY_CLASS_NAME, Field.ENTRY_CLASS_PK, Field.GROUP_ID,
             Field.MODIFIED_DATE, Field.SCOPE_GROUP_ID, Field.UID);
 
         setDefaultSelectedLocalizedFieldNames(
-            Field.DESCRIPTION, Field.TITLE, Field.USER_NAME);
+        		_DESCRIPTION, _TITLE, _USER_NAME, _CONTENT);
 
         setFilterSearch(true);
         setPermissionAware(true);
@@ -301,16 +312,16 @@ public class DLFileEntryIndexer
 			SearchContext searchContext)
 		throws Exception {
 
-		addSearchLocalizedTerm(searchQuery, searchContext, Field.DESCRIPTION, false);
-		addSearchLocalizedTerm(searchQuery, searchContext, Field.TITLE, false);
-		addSearchLocalizedTerm(searchQuery, searchContext, Field.USER_NAME, false);
+		addSearchLocalizedTerm(searchQuery, searchContext, _DESCRIPTION, false);
+		addSearchLocalizedTerm(searchQuery, searchContext, _TITLE, false);
+		addSearchLocalizedTerm(searchQuery, searchContext, _USER_NAME, false);
 
 		addSearchTerm(searchQuery, searchContext, "ddmContent", false);
 		addSearchTerm(searchQuery, searchContext, "extension", false);
 		addSearchTerm(searchQuery, searchContext, "fileEntryTypeId", false);
 		addSearchTerm(searchQuery, searchContext, "path", false);
 		addSearchLocalizedTerm(
-			searchQuery, searchContext, Field.CONTENT, false);
+			searchQuery, searchContext, _CONTENT, false);
 
 		LinkedHashMap<String, Object> params =
 			(LinkedHashMap<String, Object>)searchContext.getAttribute("params");
@@ -425,7 +436,7 @@ public class DLFileEntryIndexer
 
 						String localizedField =
 							LocalizationUtil.getLocalizedName(
-								Field.CONTENT, defaultLocale.toString());
+									_CONTENT, defaultLocale.toString());
 
 						document.addFile(
 							localizedField, is, dlFileEntry.getTitle(),
@@ -453,9 +464,9 @@ public class DLFileEntryIndexer
 				languageIds = dlFileEntry.getDLFileEntryType().getAvailableLanguageIds();
 			}
 
-            for (String languageId : languageIds) {
+			for (String languageId : languageIds) {
                 document.addText(
-                    LocalizationUtil.getLocalizedName(Field.DESCRIPTION, languageId),
+                    LocalizationUtil.getLocalizedName(_DESCRIPTION, languageId),
                     dlFileEntry.getDescription());
 
                 String title = dlFileEntry.getTitle();
@@ -465,11 +476,11 @@ public class DLFileEntryIndexer
                 }
 
                 document.addText(
-                    LocalizationUtil.getLocalizedName(Field.TITLE, languageId),
+                    LocalizationUtil.getLocalizedName(_TITLE, languageId),
                     title);
 
                 document.addText(
-                    LocalizationUtil.getLocalizedName(Field.USER_NAME, languageId),
+                    LocalizationUtil.getLocalizedName(_USER_NAME, languageId),
                     dlFileEntry.getUserName());
 
             }
@@ -558,11 +569,17 @@ public class DLFileEntryIndexer
 		Document document, Locale locale, String snippet,
 		PortletRequest portletRequest, PortletResponse portletResponse) {
 
+		String languageId = LocaleUtil.toLanguageId(locale);
+
+		String title = LocalizationUtil.getLocalizedName(_TITLE, languageId);
+		String content = LocalizationUtil.getLocalizedName(_CONTENT, languageId);
+		String description = LocalizationUtil.getLocalizedName(_DESCRIPTION, languageId);
+
 		Summary summary = createSummary(
-			locale, document, Field.TITLE, Field.CONTENT);
+			locale, document, title, content);
 
 		if (Validator.isNull(summary.getContent())) {
-			summary = createSummary(document, Field.TITLE, Field.DESCRIPTION);
+			summary = createSummary(document, title, description);
 		}
 
 		summary.setMaxContentLength(200);
